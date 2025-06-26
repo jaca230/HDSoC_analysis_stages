@@ -59,6 +59,12 @@ void NaluWaveformsIntegratorStage::Process() {
     auto pdp = std::make_unique<PipelineDataProduct>();
     pdp->setName(outputLabel_);
     pdp->setObject(std::move(list));
+    pdp->addTag("HDSoC");
+    pdp->addTag("integral");
+    pdp->addTag("sum");
+    pdp->addTag("integral_list");
+    pdp->addTag("sum_list");
+    pdp->addTag("built_by_nalu_waveforms_integrator");
     getDataProductManager()->addOrUpdate(outputLabel_, std::move(pdp));
 }
 

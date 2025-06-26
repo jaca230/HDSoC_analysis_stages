@@ -57,6 +57,10 @@ void ChannelIntegralHistogramStage::Process() {
         auto pdp = std::make_unique<PipelineDataProduct>();
         pdp->setName(outputLabel_);
         pdp->setObject(std::move(newList));
+        pdp->addTag("HDSoC");
+        pdp->addTag("histogram");
+        pdp->addTag("histogram_list");
+        pdp->addTag("built_by_channel_integral_histogram");
         getDataProductManager()->addOrUpdate(outputLabel_, std::move(pdp));
 
         PipelineDataProductLock outHandle = getDataProductManager()->checkoutWrite(outputLabel_);
