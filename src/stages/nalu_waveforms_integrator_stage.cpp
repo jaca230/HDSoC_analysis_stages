@@ -2,10 +2,10 @@
 
 #include <numeric>
 #include <spdlog/spdlog.h>
+#include <TList.h>
 
 #include "nalu/data_products/NaluWaveform.hh"
 #include "data_products/channel_integral.h"
-#include "data_products/channel_integral_collection.h"
 
 using namespace dataProducts;
 
@@ -27,24 +27,30 @@ void NaluWaveformsIntegratorStage::Process() {
         return;
     }
 
-    auto integrals = std::make_unique<ChannelIntegralCollection>();
+    auto list = std::make_unique<TList>();
+    list->SetOwner(kTRUE);  // Important: ensures deletion of contained objects
 
     try {
         auto lock = getDataProductManager()->checkoutRead(inputLabel_);
-        const auto* waveforms = dynamic_cast<const NaluWaveformCollection*>(lock->getObject());
+        const auto* waveformList = dynamic_cast<const TList*>(lock->getObject());
 
-        if (!waveforms) {
-            spdlog::error("[{}] Failed to cast object to NaluWaveformCollection", Name());
+        if (!waveformList) {
+            spdlog::error("[{}] Failed to cast input to TList", Name());
             return;
         }
 
-        for (const auto& waveform : *waveforms) {
-            double sum = std::accumulate(waveform.trace.begin(), waveform.trace.end(), 0.0);
-            ChannelIntegral ci(waveform.channel_num, sum);
-            integrals->emplace_back(ci);
+        int count = 0;
+        for (const TObject* obj : *waveformList) {
+            auto* waveform = dynamic_cast<const NaluWaveform*>(obj);
+            if (!waveform) continue;
+
+            double sum = std::accumulate(waveform->trace.begin(), waveform->trace.end(), 0.0);
+            auto* ci = new ChannelIntegral(waveform->channel_num, sum);
+            list->Add(ci);
+            ++count;
         }
 
-        spdlog::debug("[{}] Integrated {} waveforms", Name(), waveforms->size());
+        spdlog::debug("[{}] Integrated {} waveforms into TList", Name(), count);
     } catch (const std::exception& e) {
         spdlog::error("[{}] Exception while reading '{}': {}", Name(), inputLabel_, e.what());
         return;
@@ -52,6 +58,7 @@ void NaluWaveformsIntegratorStage::Process() {
 
     auto pdp = std::make_unique<PipelineDataProduct>();
     pdp->setName(outputLabel_);
-    pdp->setObject(std::move(integrals));
+    pdp->setObject(std::move(list));
     getDataProductManager()->addOrUpdate(outputLabel_, std::move(pdp));
 }
+

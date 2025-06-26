@@ -6,9 +6,6 @@
 // ChannelIntegral class
 #pragma link C++ class dataProducts::ChannelIntegral+;
 
-// ChannelIntegralCollection class
-#pragma link C++ class dataProducts::ChannelIntegralCollection+;
-
 // NaluWaveformsIntegratorStage class
 #pragma link C++ class NaluWaveformsIntegratorStage+;
 
