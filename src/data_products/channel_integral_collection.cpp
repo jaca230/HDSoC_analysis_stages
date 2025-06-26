@@ -1,6 +1,8 @@
 #include "data_products/channel_integral_collection.h"
 #include <iostream>
 
+ClassImp(dataProducts::ChannelIntegralCollection)
+
 namespace dataProducts {
 
 ChannelIntegralCollection::ChannelIntegralCollection() = default;
@@ -39,5 +41,3 @@ const std::vector<ChannelIntegral>& ChannelIntegralCollection::getIntegrals() co
 }
 
 } // namespace dataProducts
-
-ClassImp(ChannelIntegralCollection)

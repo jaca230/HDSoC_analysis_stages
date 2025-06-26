@@ -5,6 +5,7 @@
 
 #include "nalu/data_products/NaluWaveform.hh"
 #include "data_products/channel_integral.h"
+#include "data_products/channel_integral_collection.h"
 
 using namespace dataProducts;
 

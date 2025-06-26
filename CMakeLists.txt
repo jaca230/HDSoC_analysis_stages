@@ -19,12 +19,16 @@ find_package(AnalysisPipelineStagesCore REQUIRED)
 find_package(unpacker REQUIRED)
 
 # Sources
-# Gather stage and data product headers (excluding LinkDef)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cxx
+)
+
+# Headers for ROOT dictionary
 file(GLOB_RECURSE STAGE_HEADERS CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/stages/*.h)
 file(GLOB_RECURSE DATAPRODUCT_HEADERS CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/data_products/*.h)
 set(ALL_DICT_HEADERS ${STAGE_HEADERS} ${DATAPRODUCT_HEADERS})
 list(FILTER ALL_DICT_HEADERS EXCLUDE REGEX "LinkDef\\.h$")
-
 
 # Create shared library
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
