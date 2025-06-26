@@ -40,4 +40,4 @@ const std::vector<ChannelIntegral>& ChannelIntegralCollection::getIntegrals() co
 
 } // namespace dataProducts
 
-ClassImp(dataProducts::ChannelIntegralCollection)
+ClassImp(ChannelIntegralCollection)
