@@ -3,10 +3,9 @@
 #pragma link off all classes;
 #pragma link off all functions;
 
-// ChannelIntegral class
-#pragma link C++ class dataProducts::ChannelIntegral+;
 
-// NaluWaveformsIntegratorStage class
+#pragma link C++ class dataProducts::ChannelIntegral+;
 #pragma link C++ class NaluWaveformsIntegratorStage+;
+#pragma link C++ class ChannelIntegralHistogramStage+;
 
 #endif
