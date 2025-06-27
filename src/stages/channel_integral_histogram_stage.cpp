@@ -5,7 +5,6 @@
 #include <TObject.h>
 #include <spdlog/spdlog.h>
 #include <algorithm>
-#include <cmath>
 
 #include "data_products/channel_integral.h"
 
@@ -17,21 +16,24 @@ void ChannelIntegralHistogramStage::OnInit() {
     inputLabel_ = parameters_.value("input_product", "ChannelIntegralCollection");
     outputLabel_ = parameters_.value("product_name", "ChannelIntegralHistogramCollection");
     titlePrefix_ = parameters_.value("title_prefix", "Integral");
+    bins_ = parameters_.value("bins", 100);
 
-    autoMinMax_ = !(parameters_.contains("min") && parameters_.contains("max"));
-    autoBinCount_ = !parameters_.contains("bins");
+    // Check if relative range params are present
+    bool hasRelMin = parameters_.contains("relative_min");
+    bool hasRelMax = parameters_.contains("relative_max");
+    useRelativeRange_ = hasRelMin && hasRelMax;
 
-    if (!autoMinMax_) {
+    if (useRelativeRange_) {
+        relativeMin_ = parameters_.value("relative_min", -1000.0);
+        relativeMax_ = parameters_.value("relative_max", 1000.0);
+        spdlog::info("[{}] Using relative range offsets: min={} max={}", Name(), relativeMin_, relativeMax_);
+    } else {
         min_ = parameters_.value("min", 0.0);
         max_ = parameters_.value("max", 10000.0);
+        spdlog::info("[{}] Using fixed range: min={} max={}", Name(), min_, max_);
     }
 
-    if (!autoBinCount_) {
-        bins_ = parameters_.value("bins", 100);
-    }
-
-    spdlog::debug("[{}] Initialized with input '{}', output '{}', autoMinMax={}, autoBinCount={}",
-                  Name(), inputLabel_, outputLabel_, autoMinMax_, autoBinCount_);
+    spdlog::debug("[{}] Initialized with input '{}', output '{}', bins={}", Name(), inputLabel_, outputLabel_, bins_);
 }
 
 void ChannelIntegralHistogramStage::Process() {
@@ -59,8 +61,7 @@ void ChannelIntegralHistogramStage::Process() {
 
         FillHistograms(outputList, inputList);
 
-        spdlog::debug("[{}] Processed {} entries into histogram list '{}'",
-                      Name(), inputList->GetSize(), outputLabel_);
+        spdlog::debug("[{}] Processed {} entries into histogram list '{}'", Name(), inputList->GetSize(), outputLabel_);
     } else {
         auto newList = std::make_unique<TList>();
         newList->SetOwner(kTRUE);
@@ -84,61 +85,47 @@ void ChannelIntegralHistogramStage::Process() {
 
         FillHistograms(outputList, inputList);
 
-        spdlog::debug("[{}] Processed {} entries into newly created histogram list '{}'",
-                      Name(), inputList->GetSize(), outputLabel_);
+        spdlog::debug("[{}] Processed {} entries into newly created histogram list '{}'", Name(), inputList->GetSize(), outputLabel_);
     }
 }
 
 void ChannelIntegralHistogramStage::FillHistograms(TList* outputList, const TList* inputList) {
-    std::unordered_map<int, std::vector<double>> channelValues;
+    // We need to know the first value per channel if relative range is used.
+    // Let's store the first value seen per channel.
+    std::unordered_map<int, double> firstValuePerChannel;
 
-    // First pass: collect values
     for (const TObject* obj : *inputList) {
         auto* ci = dynamic_cast<const ChannelIntegral*>(obj);
         if (!ci) continue;
-        channelValues[ci->channel_num].push_back(ci->integral_value);
-    }
 
-    for (const auto& [channel, values] : channelValues) {
-        std::string histName = "channel_" + std::to_string(channel);
-
-        // Always recompute and remake if auto-anything is active
-        bool mustRebuild = autoMinMax_ || autoBinCount_;
-
-        // Remove existing hist if needed
-        if (mustRebuild) {
-            TObject* existing = outputList->FindObject(histName.c_str());
-            if (existing) {
-                outputList->Remove(existing);
-                delete existing;
-            }
-        }
-
-        TH1D* hist = dynamic_cast<TH1D*>(outputList->FindObject(histName.c_str()));
+        std::string histName = "channel_" + std::to_string(ci->channel_num);
+        auto* hist = dynamic_cast<TH1D*>(outputList->FindObject(histName.c_str()));
 
         if (!hist) {
-            double min = autoMinMax_
-                ? *std::min_element(values.begin(), values.end())
-                : min_;
-            double max = autoMinMax_
-                ? *std::max_element(values.begin(), values.end())
-                : max_;
-            if (min == max) max += 1.0;
-
-            int bins = autoBinCount_
-                ? std::max(10, static_cast<int>(std::sqrt(values.size())))
-                : bins_;
+            // Determine histogram range
+            double histMin, histMax;
+            if (useRelativeRange_) {
+                // If first value for this channel not stored, store it now
+                if (firstValuePerChannel.find(ci->channel_num) == firstValuePerChannel.end()) {
+                    firstValuePerChannel[ci->channel_num] = ci->integral_value;
+                }
+                double base = firstValuePerChannel[ci->channel_num];
+                histMin = base + relativeMin_;
+                histMax = base + relativeMax_;
+                if (histMin == histMax) histMax = histMin + 1.0;
+            } else {
+                histMin = min_;
+                histMax = max_;
+            }
 
             hist = new TH1D(histName.c_str(),
-                            (titlePrefix_ + " - Ch " + std::to_string(channel)).c_str(),
-                            bins, min, max);
+                            (titlePrefix_ + " - Ch " + std::to_string(ci->channel_num)).c_str(),
+                            bins_, histMin, histMax);
             hist->SetDirectory(nullptr);
             outputList->Add(hist);
         }
 
-        for (double val : values) {
-            hist->Fill(val);
-        }
+        // Fill histogram
+        hist->Fill(ci->integral_value);
     }
 }
-
