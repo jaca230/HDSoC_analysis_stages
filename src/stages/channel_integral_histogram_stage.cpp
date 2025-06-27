@@ -26,11 +26,11 @@ void ChannelIntegralHistogramStage::OnInit() {
     if (useRelativeRange_) {
         relativeMin_ = parameters_.value("relative_min", -1000.0);
         relativeMax_ = parameters_.value("relative_max", 1000.0);
-        spdlog::info("[{}] Using relative range offsets: min={} max={}", Name(), relativeMin_, relativeMax_);
+        spdlog::debug("[{}] Using relative range offsets: min={} max={}", Name(), relativeMin_, relativeMax_);
     } else {
         min_ = parameters_.value("min", 0.0);
         max_ = parameters_.value("max", 10000.0);
-        spdlog::info("[{}] Using fixed range: min={} max={}", Name(), min_, max_);
+        spdlog::debug("[{}] Using fixed range: min={} max={}", Name(), min_, max_);
     }
 
     spdlog::debug("[{}] Initialized with input '{}', output '{}', bins={}", Name(), inputLabel_, outputLabel_, bins_);
