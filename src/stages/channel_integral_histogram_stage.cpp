@@ -4,6 +4,8 @@
 #include <TH1D.h>
 #include <TObject.h>
 #include <spdlog/spdlog.h>
+#include <algorithm>
+#include <cmath>
 
 #include "data_products/channel_integral.h"
 
@@ -14,13 +16,22 @@ ClassImp(ChannelIntegralHistogramStage)
 void ChannelIntegralHistogramStage::OnInit() {
     inputLabel_ = parameters_.value("input_product", "ChannelIntegralCollection");
     outputLabel_ = parameters_.value("product_name", "ChannelIntegralHistogramCollection");
-
     titlePrefix_ = parameters_.value("title_prefix", "Integral");
-    bins_ = parameters_.value("bins", 100);
-    min_ = parameters_.value("min", 0.0);
-    max_ = parameters_.value("max", 10000.0);
 
-    spdlog::debug("[{}] Initialized with input '{}', output '{}'", Name(), inputLabel_, outputLabel_);
+    autoMinMax_ = !(parameters_.contains("min") && parameters_.contains("max"));
+    autoBinCount_ = !parameters_.contains("bins");
+
+    if (!autoMinMax_) {
+        min_ = parameters_.value("min", 0.0);
+        max_ = parameters_.value("max", 10000.0);
+    }
+
+    if (!autoBinCount_) {
+        bins_ = parameters_.value("bins", 100);
+    }
+
+    spdlog::debug("[{}] Initialized with input '{}', output '{}', autoMinMax={}, autoBinCount={}",
+                  Name(), inputLabel_, outputLabel_, autoMinMax_, autoBinCount_);
 }
 
 void ChannelIntegralHistogramStage::Process() {
@@ -79,21 +90,55 @@ void ChannelIntegralHistogramStage::Process() {
 }
 
 void ChannelIntegralHistogramStage::FillHistograms(TList* outputList, const TList* inputList) {
+    std::unordered_map<int, std::vector<double>> channelValues;
+
+    // First pass: collect values
     for (const TObject* obj : *inputList) {
         auto* ci = dynamic_cast<const ChannelIntegral*>(obj);
         if (!ci) continue;
+        channelValues[ci->channel_num].push_back(ci->integral_value);
+    }
 
-        std::string histName = "channel_" + std::to_string(ci->channel_num);
-        auto* hist = dynamic_cast<TH1D*>(outputList->FindObject(histName.c_str()));
+    for (const auto& [channel, values] : channelValues) {
+        std::string histName = "channel_" + std::to_string(channel);
+
+        // Always recompute and remake if auto-anything is active
+        bool mustRebuild = autoMinMax_ || autoBinCount_;
+
+        // Remove existing hist if needed
+        if (mustRebuild) {
+            TObject* existing = outputList->FindObject(histName.c_str());
+            if (existing) {
+                outputList->Remove(existing);
+                delete existing;
+            }
+        }
+
+        TH1D* hist = dynamic_cast<TH1D*>(outputList->FindObject(histName.c_str()));
 
         if (!hist) {
+            double min = autoMinMax_
+                ? *std::min_element(values.begin(), values.end())
+                : min_;
+            double max = autoMinMax_
+                ? *std::max_element(values.begin(), values.end())
+                : max_;
+            if (min == max) max += 1.0;
+
+            int bins = autoBinCount_
+                ? std::max(10, static_cast<int>(std::sqrt(values.size())))
+                : bins_;
+
             hist = new TH1D(histName.c_str(),
-                            (titlePrefix_ + " - Ch " + std::to_string(ci->channel_num)).c_str(),
-                            bins_, min_, max_);
+                            (titlePrefix_ + " - Ch " + std::to_string(channel)).c_str(),
+                            bins, min, max);
             hist->SetDirectory(nullptr);
             outputList->Add(hist);
         }
 
-        hist->Fill(ci->integral_value);
+        for (double val : values) {
+            hist->Fill(val);
+        }
     }
 }
+

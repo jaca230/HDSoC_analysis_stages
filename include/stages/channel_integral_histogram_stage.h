@@ -2,16 +2,13 @@
 #define CHANNEL_INTEGRAL_HISTOGRAM_STAGE_HH
 
 #include "stages/base_stage.h"
-
 #include <string>
+#include <unordered_map>
+#include <vector>
 
-/**
- * @class ChannelIntegralHistogramStage
- * @brief A pipeline stage that reads a TList of ChannelIntegral objects
- *        and accumulates one TH1D histogram per channel number.
- *
- * Each histogram is stored in a TList under a configurable output label.
- */
+class TList;
+class TH1D;
+
 class ChannelIntegralHistogramStage : public BaseStage {
 public:
     ChannelIntegralHistogramStage() = default;
@@ -23,12 +20,16 @@ public:
     std::string Name() const override { return "ChannelIntegralHistogramStage"; }
 
 private:
-    std::string inputLabel_;   ///< Name of the input data product (TList of ChannelIntegral)
-    std::string outputLabel_;  ///< Name of the output data product (TList of TH1D)
-    std::string titlePrefix_;  ///< Histogram title prefix
+    std::string inputLabel_;
+    std::string outputLabel_;
+    std::string titlePrefix_;
+
     int bins_ = 100;
     double min_ = 0.0;
     double max_ = 10000.0;
+
+    bool autoMinMax_ = false;
+    bool autoBinCount_ = false;
 
     void FillHistograms(TList* outputList, const TList* inputList);
 
