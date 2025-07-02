@@ -7,12 +7,55 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Suppress false-positive GCC warnings when top-level
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-Wno-stringop-overflow)
+  endif()
+endif()
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+# ------------------ CPM Setup ------------------
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
+
+# spdlog (header-only)
+CPMAddPackage(
+  NAME spdlog
+  GITHUB_REPOSITORY gabime/spdlog
+  VERSION 1.13.0
+  OPTIONS "SPDLOG_BUILD_EXAMPLES OFF" "SPDLOG_BUILD_TESTS OFF" "SPDLOG_FMT_EXTERNAL OFF"
+  DOWNLOAD_ONLY YES
+)
+
+if(spdlog_ADDED)
+  add_library(spdlog_header_only INTERFACE)
+  target_include_directories(spdlog_header_only INTERFACE
+    $<BUILD_INTERFACE:${spdlog_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+  )
+  add_library(spdlog::spdlog ALIAS spdlog_header_only)
+endif()
+
+# nlohmann_json (header-only)
+CPMAddPackage(
+  NAME nlohmann_json
+  GITHUB_REPOSITORY nlohmann/json
+  VERSION 3.11.3
+  DOWNLOAD_ONLY YES
+)
+
+if(nlohmann_json_ADDED)
+  add_library(nlohmann_json_header_only INTERFACE)
+  target_include_directories(nlohmann_json_header_only INTERFACE
+    $<BUILD_INTERFACE:${nlohmann_json_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+  )
+  add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json_header_only)
+endif()
+
 # Dependencies
-find_package(spdlog REQUIRED)
-find_package(nlohmann_json REQUIRED)
 find_package(ROOT REQUIRED COMPONENTS Core RIO Tree Hist)
 include(${ROOT_USE_FILE})
 find_package(AnalysisPipelineStagesCore REQUIRED)
@@ -43,19 +86,19 @@ target_include_directories(${PROJECT_NAME}
 # Link libraries
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
+        ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist
+        spdlog_header_only
+        nlohmann_json_header_only
         AnalysisPipelineStagesCore::analysis_pipeline_stages_core
         unpacker::common_data_products
         unpacker::nalu_data_products
-        ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist
-        spdlog::spdlog
-        nlohmann_json::nlohmann_json
 )
 
 # Gather include directories for ROOT dictionary
 set(ROOT_LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/include/LinkDef.h)
 set(ROOT_DICTIONARY_INCLUDE_OPTIONS "-I${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-# Helper macro for pulling include paths from a target
+# Helper function for pulling include paths from a target
 function(append_target_includes_to_root_dict target_name)
   get_target_property(INCLUDE_DIRS ${target_name} INTERFACE_INCLUDE_DIRECTORIES)
   if(INCLUDE_DIRS AND NOT INCLUDE_DIRS STREQUAL "${target_name}_NOTFOUND")
@@ -106,6 +149,20 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
       INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
+
+  if(TARGET spdlog_header_only)
+    install(TARGETS spdlog_header_only
+      EXPORT ${PROJECT_NAME}Targets
+      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+  endif()
+
+  if(TARGET nlohmann_json_header_only)
+    install(TARGETS nlohmann_json_header_only
+      EXPORT ${PROJECT_NAME}Targets
+      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+  endif()
 
   install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
