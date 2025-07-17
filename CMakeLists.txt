@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.14)
 
 project(hdsoc_pipeline_plugin VERSION 1.0 LANGUAGES CXX)
 
+if(NOT DEFINED PROJECT_NAMESPACE)
+  set(PROJECT_NAMESPACE analysis_pipeline)
+endif()
+
 # ----------------------- Compiler Settings ------------------------
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -73,6 +77,9 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 # ----------------------- Library Target ---------------------------
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
+add_library(${PROJECT_NAMESPACE}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(${PROJECT_NAMESPACE}::hdsoc ALIAS ${PROJECT_NAME})
+
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -84,7 +91,7 @@ target_link_libraries(${PROJECT_NAME}
     ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist
     spdlog_header_only
     nlohmann_json_header_only
-    analysis_pipeline_core::analysis_pipeline_core
+    analysis_pipeline::analysis_pipeline_core
     unpacker::common_data_products
     unpacker::nalu_data_products
 )
@@ -140,7 +147,7 @@ set(PLUGIN_ROOT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include/analysis_pipeline/${PL
 set(ROOT_LINKDEF ${PLUGIN_ROOT_PATH}/LinkDef.h)
 set(ROOT_DICTIONARY_INCLUDE_OPTIONS "-I${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-append_target_includes_to_root_dict(analysis_pipeline_core::analysis_pipeline_core)
+append_target_includes_to_root_dict(analysis_pipeline::analysis_pipeline_core)
 append_target_includes_to_root_dict(unpacker::common_data_products)
 append_target_includes_to_root_dict(unpacker::nalu_data_products)
 
@@ -197,7 +204,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
 
   install(EXPORT ${PROJECT_NAME}Targets
     FILE ${PROJECT_NAME}Targets.cmake
-    NAMESPACE ${PROJECT_NAME}::
+    NAMESPACE ${PROJECT_NAMESPACE}::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
   )
 
