@@ -1,7 +1,7 @@
 #ifndef CHANNEL_INTEGRAL_HISTOGRAM_STAGE_HH
 #define CHANNEL_INTEGRAL_HISTOGRAM_STAGE_HH
 
-#include "stages/base_stage.h"
+#include "analysis_pipeline_core/stages/base_stage.h"
 
 #include <string>
 

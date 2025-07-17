@@ -4,7 +4,7 @@
 #include <spdlog/spdlog.h>
 #include <TList.h>
 
-#include "nalu/data_products/NaluWaveform.hh"
+#include "unpacker/nalu/data_products/NaluWaveform.hh"
 #include "data_products/channel_integral.h"
 
 using namespace dataProducts;

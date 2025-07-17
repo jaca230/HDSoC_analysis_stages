@@ -1,7 +1,7 @@
 #ifndef CHANNEL_INTEGRAL_H
 #define CHANNEL_INTEGRAL_H
 
-#include "common/data_products/DataProduct.hh"
+#include "unpacker/common/data_products/DataProduct.hh"
 #include <cstdint>
 #include <string>
 #include <vector>

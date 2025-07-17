@@ -65,7 +65,7 @@ endif()
 # Dependencies
 find_package(ROOT REQUIRED COMPONENTS Core RIO Tree Hist)
 include(${ROOT_USE_FILE})
-find_package(AnalysisPipelineStagesCore REQUIRED)
+find_package(analysis_pipeline_core REQUIRED)
 find_package(unpacker REQUIRED)
 
 # Sources
@@ -96,7 +96,7 @@ target_link_libraries(${PROJECT_NAME}
         ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist
         spdlog_header_only
         nlohmann_json_header_only
-        AnalysisPipelineStagesCore::analysis_pipeline_stages_core
+        analysis_pipeline_core::analysis_pipeline_core
         unpacker::common_data_products
         unpacker::nalu_data_products
 )
@@ -125,7 +125,7 @@ function(append_target_includes_to_root_dict target_name)
   set(ROOT_DICTIONARY_INCLUDE_OPTIONS ${ROOT_DICTIONARY_INCLUDE_OPTIONS} PARENT_SCOPE)
 endfunction()
 
-append_target_includes_to_root_dict(AnalysisPipelineStagesCore::analysis_pipeline_stages_core)
+append_target_includes_to_root_dict(analysis_pipeline_core::analysis_pipeline_core)
 append_target_includes_to_root_dict(unpacker::common_data_products)
 append_target_includes_to_root_dict(unpacker::nalu_data_products)
 
