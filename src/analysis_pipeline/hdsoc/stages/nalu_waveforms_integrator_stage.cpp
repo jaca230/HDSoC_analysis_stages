@@ -1,11 +1,11 @@
-#include "stages/nalu_waveforms_integrator_stage.h"
+#include "analysis_pipeline/hdsoc/stages/nalu_waveforms_integrator_stage.h"
 
 #include <numeric>
 #include <spdlog/spdlog.h>
 #include <TList.h>
 
 #include "unpacker/nalu/data_products/NaluWaveform.hh"
-#include "data_products/channel_integral.h"
+#include "analysis_pipeline/hdsoc/data_products/channel_integral.h"
 
 using namespace dataProducts;
 

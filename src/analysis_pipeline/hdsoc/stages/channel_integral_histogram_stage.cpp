@@ -1,4 +1,4 @@
-#include "stages/channel_integral_histogram_stage.h"
+#include "analysis_pipeline/hdsoc/stages/channel_integral_histogram_stage.h"
 
 #include <TList.h>
 #include <TH1D.h>
@@ -6,7 +6,7 @@
 #include <spdlog/spdlog.h>
 #include <algorithm>
 
-#include "data_products/channel_integral.h"
+#include "analysis_pipeline/hdsoc/data_products/channel_integral.h"
 
 using namespace dataProducts;
 

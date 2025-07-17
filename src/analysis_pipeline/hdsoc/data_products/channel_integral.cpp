@@ -1,4 +1,4 @@
-#include "data_products/channel_integral.h"
+#include "analysis_pipeline/hdsoc/data_products/channel_integral.h"
 #include <iostream>
 #include <sstream>
 

@@ -1,7 +1,7 @@
 #ifndef HD_SOC_ANALYSIS_STAGES_NALU_WAVEFORMS_INTEGRATOR_STAGE_H
 #define HD_SOC_ANALYSIS_STAGES_NALU_WAVEFORMS_INTEGRATOR_STAGE_H
 
-#include "analysis_pipeline_core/stages/base_stage.h"
+#include "analysis_pipeline/core/stages/base_stage.h"
 
 class NaluWaveformsIntegratorStage : public BaseStage {
 public:
