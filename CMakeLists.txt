@@ -25,46 +25,6 @@ include(CMakePackageConfigHelpers)
 # ----------------------- CPM (Dependency Management) --------------
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
 
-# Use externally defined versions or fall back to defaults
-set(CPM_SPDLOG_VERSION "1.13.0" CACHE STRING "spdlog version")
-set(CPM_NLOHMANN_JSON_VERSION "3.11.3" CACHE STRING "nlohmann_json version")
-
-# Add spdlog dependency (header-only)
-CPMAddPackage(
-  NAME spdlog
-  GITHUB_REPOSITORY gabime/spdlog
-  VERSION ${CPM_SPDLOG_VERSION}
-  OPTIONS
-    "SPDLOG_BUILD_EXAMPLES OFF"
-    "SPDLOG_BUILD_TESTS OFF"
-    "SPDLOG_FMT_EXTERNAL OFF"
-  DOWNLOAD_ONLY YES
-)
-if(spdlog_ADDED)
-  add_library(spdlog_header_only INTERFACE)
-  target_include_directories(spdlog_header_only INTERFACE
-    $<BUILD_INTERFACE:${spdlog_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  )
-  add_library(spdlog::spdlog ALIAS spdlog_header_only)
-endif()
-
-# Add nlohmann_json dependency (header-only)
-CPMAddPackage(
-  NAME nlohmann_json
-  GITHUB_REPOSITORY nlohmann/json
-  VERSION ${CPM_NLOHMANN_JSON_VERSION}
-  DOWNLOAD_ONLY YES
-)
-if(nlohmann_json_ADDED)
-  add_library(nlohmann_json_header_only INTERFACE)
-  target_include_directories(nlohmann_json_header_only INTERFACE
-    $<BUILD_INTERFACE:${nlohmann_json_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  )
-  add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json_header_only)
-endif()
-
 # ----------------------- Required Packages ------------------------
 find_package(ROOT REQUIRED COMPONENTS Core RIO)
 find_package(analysis_pipeline_core REQUIRED)
@@ -89,8 +49,8 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
     ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist
-    spdlog_header_only
-    nlohmann_json_header_only
+    analysis_pipeline::spdlog_header_only
+    analysis_pipeline::nlohmann_json_header_only
     analysis_pipeline::analysis_pipeline_core
     unpacker::common_data_products
     unpacker::nalu_data_products
@@ -191,11 +151,6 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     ${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}_rdict.pcm
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     OPTIONAL
-  )
-
-  install(TARGETS spdlog_header_only nlohmann_json_header_only
-    EXPORT ${PROJECT_NAME}Targets
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
 
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
