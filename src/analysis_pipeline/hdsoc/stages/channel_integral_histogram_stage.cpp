@@ -51,7 +51,7 @@ void ChannelIntegralHistogramStage::Process() {
     }
 
     if (getDataProductManager()->hasProduct(outputLabel_)) {
-        PipelineDataProductLock outHandle = getDataProductManager()->checkoutWrite(outputLabel_);
+        auto outHandle = getDataProductManager()->checkoutWrite(outputLabel_);
         TList* outputList = dynamic_cast<TList*>(outHandle->getObject());
 
         if (!outputList) {
@@ -75,7 +75,7 @@ void ChannelIntegralHistogramStage::Process() {
         pdp->addTag("built_by_channel_integral_histogram");
         getDataProductManager()->addOrUpdate(outputLabel_, std::move(pdp));
 
-        PipelineDataProductLock outHandle = getDataProductManager()->checkoutWrite(outputLabel_);
+        auto outHandle = getDataProductManager()->checkoutWrite(outputLabel_);
         TList* outputList = dynamic_cast<TList*>(outHandle->getObject());
 
         if (!outputList) {
